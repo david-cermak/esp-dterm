@@ -1,0 +1,34 @@
+menu "Example Configuration"
+
+config ESP_WIFI_SSID
+    string "WiFi SSID"
+    default "myssid"
+    help
+	SSID (network name) for the example to connect to.
+
+config ESP_WIFI_PASSWORD
+    string "WiFi Password"
+    default "mypassword"
+    help
+	WiFi password (WPA or WPA2) for the example to use.
+
+config ESP_BROKER
+    string "broker url"
+    default "mqtt://iot.eclipse.org"
+    help
+	url of broker used for remoter dterming.
+
+config ESP_PUBLISH
+    string "publish topic"
+    default "/remoteterm/0001/out"
+    help
+	publish topic used for remoter dterming.
+
+config ESP_SUBSCRIBE
+    string "subscribe topic"
+    default "/remoteterm/0001/in"
+    help
+	subscribe topic used for remoter dterming.
+
+
+endmenu

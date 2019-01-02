@@ -19,6 +19,7 @@
 #include "mqtt.h"
 #include "commands.h"
 
+
 #define MAX_LINE 1024
 
 int read_line(char * line);
@@ -66,6 +67,8 @@ void dterm_main()
     char line[MAX_LINE] = { 0 };
     run_read = true;
     std::thread uart_reading(read_thread);
+    Commands cmd;
+    cmd.GetConfig(mqtt_on, forward);
     Mqtt client(CONFIG_ESP_BROKER, CONFIG_ESP_SUBSCRIBE, CONFIG_ESP_PUBLISH);
     if (mqtt_on) {
       client.Start();
@@ -75,13 +78,6 @@ void dterm_main()
 
     while (true) {
       if (std::cin.getline(line, MAX_LINE)) {
-        if (forward) {
-           std::cout <<  "forwarding" << line << std::endl;
-          size_t len = strlen(line);
-          line[len] = '\n';
-          line[len+1] = '\0';
-           write_line(line , len+1);
-        }
         std::cout <<  line << std::endl;
         if (strcmp(line, "forwardon") == 0) {
           forward = true;
@@ -91,6 +87,18 @@ void dterm_main()
           mqtt_on = true;
         } else if (strcmp(line, "mqttoff") == 0) {
           mqtt_on = false;
+        } else if (strcmp(line, "save") == 0) {
+          cmd.SetConfig(mqtt_on, forward);
+          cmd.Save();
+        } else {
+          // Forwarding only if not a command
+          if (forward) {
+            std::cout <<  "forwarding:" << line << std::endl;
+            size_t len = strlen(line);
+            line[len] = '\n';
+            line[len+1] = '\0';
+            write_line(line , len+1);
+          }
         }
       }
     }

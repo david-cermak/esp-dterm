@@ -3,6 +3,28 @@
 
 #include <iostream>
 
+
+bool Commands::GetString(const char * key, std::string& str)
+{
+    size_t len;
+    esp_err_t err = nvs_get_str(m_handle, key, NULL, &len);
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
+        std::cout << "Key: " << key << " not found in NVS!"  << std::endl;
+    } else if (err != ESP_OK) {
+        std::cout << "Error:" <<  esp_err_to_name(err) <<  "saving the config word!" << std::endl;
+    } else {
+        str.reserve(len);
+        err = nvs_get_str(m_handle, key, (char*) str.c_str(), &len);
+        if (err == ESP_OK) {
+            std::cout  << key <<  "=" << str << std::endl;
+            return true;
+        } else {
+            std::cout << "Error:" <<  esp_err_to_name(err) <<  "saving the config word!" << std::endl;
+        }
+    }
+    return false;
+}
+
 Commands::Commands()
 {
     esp_err_t err = nvs_flash_init();
@@ -18,6 +40,8 @@ Commands::Commands()
         // Storage not available, continue with configuration from io
     } else {
         std::cout << "Done"  << std::endl;
+
+        // reading basic configuration
         err = nvs_get_u32(m_handle, "config", &m_config);
         if (err == ESP_ERR_NVS_NOT_FOUND) {
             std::cout << "Config not initialized yet!\n"  << std::endl;
@@ -25,6 +49,15 @@ Commands::Commands()
             std::cout << "Error:" <<  esp_err_to_name(err) <<  "saving the config word!" << std::endl;
         }
     }
+}
+
+
+bool Commands::GetCredentials(std::string& ssid, std::string& password)
+{
+    if (GetString("ssid", ssid) && GetString("password", password)) {
+        return true;
+    }
+    return false;
 }
 
 void Commands::GetConfig(bool &mqtt_on, bool &forward_on)

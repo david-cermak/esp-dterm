@@ -62,13 +62,27 @@ void read_thread()
   }
 }
 
+char my_password[50];
+char my_ssid[50];
+
+extern void wifi_creds(char * wifi_ssid, char * wifi_password);
+
 void dterm_main()
 {
+    std::string ssid;
+    std::string pwd;
+
     char line[MAX_LINE] = { 0 };
     run_read = true;
     std::thread uart_reading(read_thread);
     Commands cmd;
     cmd.GetConfig(mqtt_on, forward);
+    if (cmd.GetCredentials(ssid, pwd)) {
+      strcpy(my_ssid, ssid.c_str());
+      strcpy(my_password, pwd.c_str());
+          wifi_creds(my_ssid, my_password);
+    }
+
     Mqtt client(CONFIG_ESP_BROKER, CONFIG_ESP_SUBSCRIBE, CONFIG_ESP_PUBLISH);
     if (mqtt_on) {
       client.Start();
@@ -83,6 +97,15 @@ void dterm_main()
           forward = true;
         } else if (strcmp(line, "forwardoff") == 0) {
           forward = false;
+        } else if (strncmp(line, "ssid", sizeof("ssid")-1) == 0) {
+          strcpy(my_ssid, line+sizeof("ssid ")-1);
+        } else if (strncmp(line, "password", sizeof("password")-1) == 0) {
+          strcpy(my_password, line+sizeof("password ")-1);
+          wifi_creds(my_ssid, my_password);
+          ssid = std::string(my_ssid);
+          pwd = std::string(my_password);
+          cmd.SaveCredentials(ssid, pwd);
+          
         } else if (strcmp(line, "mqtton") == 0) {
           mqtt_on = true;
         } else if (strcmp(line, "mqttoff") == 0) {

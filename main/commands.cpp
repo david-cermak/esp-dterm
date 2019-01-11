@@ -13,9 +13,11 @@ bool Commands::GetString(const char * key, std::string& str)
     } else if (err != ESP_OK) {
         std::cout << "Error:" <<  esp_err_to_name(err) <<  "saving the config word!" << std::endl;
     } else {
-        str.reserve(len);
-        err = nvs_get_str(m_handle, key, (char*) str.c_str(), &len);
+        // str.reserve(len);
+        char my_str[len];
+        err = nvs_get_str(m_handle, key, my_str, &len);
         if (err == ESP_OK) {
+            str = std::string(my_str);
             std::cout  << key <<  "=" << str << std::endl;
             return true;
         } else {
@@ -23,6 +25,17 @@ bool Commands::GetString(const char * key, std::string& str)
         }
     }
     return false;
+}
+
+bool Commands::SaveString(const char * key, std::string& str)
+{
+    size_t len;
+    esp_err_t err = nvs_set_str(m_handle, key, str.c_str());
+    if (err != ESP_OK) {
+        std::cout << "Error:" <<  esp_err_to_name(err) <<  "saving the config word!" << std::endl;
+        return false;
+    }
+    return true;
 }
 
 Commands::Commands()
@@ -49,6 +62,15 @@ Commands::Commands()
             std::cout << "Error:" <<  esp_err_to_name(err) <<  "saving the config word!" << std::endl;
         }
     }
+}
+
+
+bool Commands::SaveCredentials(std::string& ssid, std::string& password)
+{
+    if (SaveString("ssid", ssid) && SaveString("password", password)) {
+        return true;
+    }
+    return false;
 }
 
 

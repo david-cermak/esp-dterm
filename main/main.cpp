@@ -82,21 +82,16 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     return ESP_OK;
 }
 
-void wifi_init_sta()
+void wifi_creds(char * wifi_ssid, char * wifi_password)
 {
-    wifi_event_group = xEventGroupCreate();
-
-    tcpip_adapter_init();
-    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL) );
-
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     wifi_config_t wifi_config;
     // zero out the config struct to ensure defaults are setup
     memset(&wifi_config, 0, sizeof(wifi_sta_config_t));
     // only copy ssid&password from example config
-    strcpy((char*)(wifi_config.sta.ssid), EXAMPLE_ESP_WIFI_SSID);
-    strcpy((char*)(wifi_config.sta.password), EXAMPLE_ESP_WIFI_PASS);
+    strcpy((char*)(wifi_config.sta.ssid), wifi_ssid);
+    strcpy((char*)(wifi_config.sta.password), wifi_password);
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
@@ -104,7 +99,17 @@ void wifi_init_sta()
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");
     ESP_LOGI(TAG, "connect to ap SSID:%s password:%s",
-             EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
+             wifi_ssid, wifi_password);
+
+}
+
+void wifi_init_sta()
+{
+    wifi_event_group = xEventGroupCreate();
+
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL) );
+    wifi_creds(EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
 }
 
 extern "C" void app_main()
@@ -133,7 +138,7 @@ extern "C" void app_main()
     esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
 
     // wait till we receive IP, so asio realated code can be started
-    xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT, 1, 1, portMAX_DELAY);
+    // xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT, 1, 1, portMAX_DELAY);
 
     uart_config_t uart_config = {
         .baud_rate = 115200,
@@ -146,7 +151,6 @@ extern "C" void app_main()
     uart_set_pin(UART_NUM_1, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS);
     uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
 
-    // network is ready, let's proceed with ASIO example
     dterm_main();
 }
 
